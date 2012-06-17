@@ -24,6 +24,7 @@ var arithmetic = function (f, expr, env) {
     return sum;
 };
 
+// add a binding to the supplied environment
 var add_binding = function (env, v, val) {
     var bind;
     if (env.hasOwnProperty('bindings')) {
@@ -46,6 +47,7 @@ var update = function (env, v, val) {
     }
 };
 
+// lookup a given v in the supplied environment
 var lookup = function (env, v) {
     if (is_empty(env)) {
         return null;
@@ -60,6 +62,7 @@ var lookup = function (env, v) {
     }
 };    
 
+// evaluate the given expression in the context of the given environment
 var evalS = function (expr, env) {
     var res, newenv, i, bind;
     // numbers eval to themselves
@@ -192,9 +195,6 @@ var evalS = function (expr, env) {
         }
         return '#f';
         break;
-
-        
-
     case 'if':
         if (evalS(expr[1], env) === '#t') {
             return evalS(expr[2], env);
