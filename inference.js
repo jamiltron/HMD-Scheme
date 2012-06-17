@@ -79,6 +79,10 @@ var analyse = function(expr, env, specific) {
         }
         return analyse(expr[2], new_env, specific);
 
+    } else if (expr[0] === 'def') {
+        new_env = clone(env);
+        new_specific = clone(specific);
+        
     } else if (expr[0] === 'lambda') {
         args = [];
         new_env = clone(env);
@@ -94,11 +98,14 @@ var analyse = function(expr, env, specific) {
     } else if (expr[0] === 'let*') {
         new_env = clone(env);
         new_specific = clone(specific);
+        // since the let* bindings come in pairs (i.e (let* (x 1 y 2)))
+        // we need to hop over each, declare a new type variable for the i - 1
+        // variable, and bound it to the inference of i
         for (var i = 1; i < expr[1].length; i+=2) {
-            deft = new TypeVariable();
-            new_env[expr[1][i - 1]] = deft;
+            funt = new TypeVariable();
+            new_env[expr[1][i - 1]] = funt;
             new_non_g[funt] = true;
-            defnt = analyse(next_node.defn, new_env, new_specific);
+            defnt = analyse(expr[1][i], new_env, new_specific);
             unify(funt, defnt);
         }
         return analyse(expr[2], new_env, specific);
