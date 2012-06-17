@@ -13,10 +13,10 @@ Influences
 ----------
 This takes a lot of influence/code-adaptation from:
 
-[Nathan's University] (http://nathansuniversity.com/)
-[Roy/Brian McKenna] (http://roy.brianmckenna.org/)
-[Robert Smallshire] (http://www.smallshire.org.uk/)
-[Martin Grabm] (https://github.com/wh5a/Algorithm-W-Step-By-Step)
+* [Nathan's University](http://nathansuniversity.com/).
+* [Roy/Brian McKenna](http://roy.brianmckenna.org/).
+* [Robert Smallshire](http://www.smallshire.org.uk/).
+* [Martin Grabm](https://github.com/wh5a/Algorithm-W-Step-By-Step).
 
 Currently Supports
 --------------
