@@ -4,7 +4,8 @@ if (typeof module !== 'undefined') {
     var parse = PEG.buildParser(fs.readFileSync('HMDScheme.peg', 'utf-8')).parse;
 }
 
-// Evil GLOBALS
+/* Evil GLOBALS (I want to be able to generate global ids and names
+   for the type variables */
 var FIRST_LOW = 97;
 var LAST_LOW  = 122;
 var gID       = 0;
@@ -46,6 +47,8 @@ var fresh_id = function () {
     return id;
 };
 
+// clone an object, only focusing on properties that the object isn't
+// inheriting
 var clone = function(o) {
     var copy, attr;
 
@@ -60,10 +63,12 @@ var clone = function(o) {
     }
 };
 
+// given an expression, a type environment, and a list of specifically-named
+// types, generate the type of the supplied expression
 var analyse = function(expr, env, specific) {
     var t1, t2, i;
     var args = [];
-    var defnt, funt, argt, new_specific, new_env, ret, next_node, result_type, ret_type;
+    var defnt, funt, argt, new_specific, new_env, next_node, result_type, ret_type;
     specific = typeof specific !== 'undefined' ? specific : {};
 
     if (expr[0] === 'let') {
@@ -216,23 +221,30 @@ var unify = function (t1, t2) {
     }
 };
 
-
+// generate a fresh copy of a type given a list of specific types
 var fresh = function (t, specific) {
     var mappings = {};
 
     var freshrec = function (tp) {
-        var newt;
         var fresh_t = [];
         var p = prune(tp);  
+
         if (p.tag === "TVar") {
+            // if the currectly pruned type is not specific
             if (is_generic(p, specific)) {
+                // if it is not mapped, provide a mapping of a new type var
                 if (typeof mappings[p] === 'undefined') {
                     mappings[p] = new TypeVariable();
                 }
+                // or return the supplied mapping
                 return mappings[p];
+            // if the pruned type is indeed specific, return it
             } else {
                 return p;
             }
+        /* if we have a type operator, we must generate a fresh
+           type operator with fresh types for each of the copied
+           operator's types */
         } else if (p.tag === "TOp") {
             for (var i = 0; i < p.types.length; i++) {
                 fresh_t.push(freshrec(p.types[i]));
@@ -268,6 +280,7 @@ var TypeOperator = function (name, types) {
     this.types = types;
 };
 
+
 var Fn = function (types) {
     var f = new TypeOperator("->", types);
     return f;
@@ -291,7 +304,7 @@ var Bool      = new TypeOperator("Bool", []);
 var Str       = new TypeOperator("String", []); 
 var Nil       = new TypeOperator("Nil", []);
 
-
+// make inferred types look a little nicer
 var pretty_print = function (result) {
     var from_str;
     if (result.tag === "TVar") {
@@ -319,7 +332,8 @@ var pretty_print = function (result) {
         throw new Error("Pretty printing error");
     }
 };
-    
+  
+// run the type inference algorithm for an unparsed statement  
 var typecheck = function(statement) {
     var top_env   = {'#t':   Bool, 
                      '#f':   Bool,
