@@ -103,7 +103,7 @@ var analyse = function(expr, env, specific) {
         }
         return analyse(expr[2], new_env, specific);
 
-        
+    // Dotted-pairs
     } else if (expr[0] === '.') {
         t1 = analyse(expr[1], env);
         t2 = analyse(expr[2], env);
@@ -143,6 +143,9 @@ var analyse = function(expr, env, specific) {
     }
 };    
 
+// if a type var is supplied, if it is an instance of another type
+// return that instance, otherwise set the instance to the pruned type
+// of itself. Type operators prune to themselves
 var prune = function (t) {
     if (t.tag !== "TVar" && t.tag !== "TOp") {
         throw new Error("prune error");
@@ -154,14 +157,17 @@ var prune = function (t) {
     return t;
 };
 
-var is_generic = function (v, non_generic) {
+// if a type is not a specific type
+var is_generic = function (v, specific) {
     var ng;
-    for (ng in non_generic) {
+    for (ng in specific) {
         if (ng == v) return false;
     }
     return true;
 };
 
+// lookup the type in the supplied environment, or
+// return the type of an atom
 var get_type = function (name, env, specific) {
     if (typeof env[name] !== 'undefined') {
         return fresh(env[name], specific);
@@ -176,6 +182,8 @@ var get_type = function (name, env, specific) {
     }
 };
   
+// checks if pruned type t is v, if the pruned type is
+// an operator, see if v occurs within the constructing types
 var occurs_type = function (v, t) {
     var pruned_t = prune(t);
     if (pruned_t === v) {
@@ -186,6 +194,7 @@ var occurs_type = function (v, t) {
     return false;
 };
 
+// checks if types t occurs in a list of types ts
 var occurs_in = function (t, ts) {
     var i;
     for (i = 0; i < ts.length; i++) {
@@ -196,10 +205,17 @@ var occurs_in = function (t, ts) {
     return false;
 };
 
+// attempts to unify two types, first the type types
+// are pruned and then both are type vars and do not
+// occur within each others' definition, type a is set as
+// an instance of b
 var unify = function (t1, t2) {
     var a = prune(t1);
     var b = prune(t2);
     var i;
+    
+    // if a is a type var an not b, see if a needs to be
+    // set as an instance of b
     if (a.tag === "TVar") {
         if (a !== b) {
             if (occurs_type(a, b)) {
@@ -209,6 +225,9 @@ var unify = function (t1, t2) {
         }
     } else if (a.tag === "TOp" && b.tag === "TVar") {
         unify(b, a);
+
+    // if both are type operators, they must have the same name and number
+    // of types, and if they do all of their constructing types must unify
     } else if (a.tag === "TOp" && b.tag === "TOp") {
         if ((a.name !== b.name) || (a.types.length !== b.types.length)) {
             throw new Error("Type mismatch");
