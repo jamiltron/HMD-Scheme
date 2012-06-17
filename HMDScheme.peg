@@ -1,0 +1,41 @@
+start =
+      ws exprs:expr*
+      { return exprs; }
+
+expr =
+    form:(sexpr / qexpr / digit / atom / str) ws
+    { return form; }
+
+atom =
+    chars:validchar+
+    { return chars.join(""); }
+
+sexpr =
+    "(" ws exprs:expr* ")"
+    { return exprs; }
+
+qexpr = 
+    q:"'" e:expr
+    { return ['quote', e]; }
+
+digit =
+    d:[1-9][0-9]*
+    { return parseInt(d, 10); }
+
+str =
+   s:"\"".*"\""
+   { return s; }
+
+validchar =
+    [0-9a-zA-Z_?!+-=@#$%^&*/<>]
+
+comment =
+    ";;" (!newline .)*
+
+newline = 
+    [\r\n]
+
+space = 
+    [\t ]
+
+ws = (comment / newline / space)*
