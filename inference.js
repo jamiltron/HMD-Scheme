@@ -101,11 +101,11 @@ var analyse = function(expr, env, specific) {
         // since the let* bindings come in pairs (i.e (let* (x 1 y 2)))
         // we need to hop over each, declare a new type variable for the i - 1
         // variable, and bound it to the inference of i
-        for (var i = 1; i < expr[1].length; i+=2) {
+        for (var i = 0; i < expr[1].length; i+=2) {
             funt = new TypeVariable();
-            new_env[expr[1][i - 1]] = funt;
-            new_non_g[funt] = true;
-            defnt = analyse(expr[1][i], new_env, new_specific);
+            new_env[expr[1][i]] = funt;
+            new_specific[funt] = true;
+            defnt = analyse(expr[1][i + 1], new_env, new_specific);
             unify(funt, defnt);
         }
         return analyse(expr[2], new_env, specific);

@@ -403,3 +403,33 @@ suite('Typecheck lambda:', function() {
         );
     });
 });
+
+suite('Typecheck let:', function () {
+    test('(let (x 1) x) :: Int', function() {
+        assert.deepEqual(
+            typecheck('(let (x 1) x)')[0],
+            'Int'
+        );
+    });
+    test('(let (x 1 y #t) y):: Bool', function() {
+        assert.deepEqual(
+            typecheck('(let (x 1 y #t) y)')[0],
+            'Bool'
+        );
+    });
+});
+
+suite('Typecheck let*:', function () {
+    test('(let* (x 1 y x) x) :: Int', function() {
+        assert.deepEqual(
+            typecheck('(let* (x 1 y x) x)')[0],
+            'Int'
+        );
+    });
+    test('(let* (x 2 y (< x 3)) y):: Bool', function() {
+        assert.deepEqual(
+            typecheck('(let* (x 2 y (< x 3)) y)')[0],
+            'Bool'
+        );
+    });
+});
