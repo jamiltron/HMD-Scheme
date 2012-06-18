@@ -4,8 +4,8 @@ if (typeof module !== 'undefined') {
     var parse = PEG.buildParser(fs.readFileSync('HMDScheme.peg', 'utf-8')).parse;
 }
 
-/* Evil GLOBALS (I want to be able to generate global ids and names
-   for the type variables */
+// We need to be able to generate global ids and names, and
+// really this is the easiest way to go about it.
 var FIRST_LOW = 97;
 var LAST_LOW  = 122;
 var gID       = 0;
@@ -379,7 +379,9 @@ var typecheck = function(statement) {
                      'cons': Fn([t1, List(t1), List(t1)]),
                      '.':    Fn([t1, t2, Pair(t1, t2)])};
     var p = parse(statement);
-    return p.map(function (x) { return pretty_print(analyse(x, top_env)); });
+    var result = p.map(function (x) { return pretty_print(analyse(x, top_env)); });
+    gName = [FIRST_LOW];
+    return result;
 };
 
 if (typeof module !== 'undefined') {

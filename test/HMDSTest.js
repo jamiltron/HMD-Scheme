@@ -66,7 +66,6 @@ suite('Set:\t', function() {
     });
 });
 
-
 suite('Math:\t', function() {
     test('add two numbers', function() {
         assert.deepEqual(
@@ -378,16 +377,22 @@ suite('Typecheck application:', function() {
 });
 
 suite('Typecheck lambda:', function() {
-    test('(lambda (x) x )  :: (a -> a)', function() {
+    test('(lambda (x) x)', function() {
         assert.deepEqual(
             typecheck('(lambda (x) x)')[0],
             '(a -> a)'
         );
     });
-    test('(lambda (a b c d e f g) e )  :: (b -> c -> d -> e -> f -> g -> h -> f)', function() {
+    test('(lambda (x y) y)  :: (a -> b -> b)', function() {
         assert.deepEqual(
-            typecheck('(lambda (a b c d e f g) e )')[0],
-            '(b -> c -> d -> e -> f -> g -> h -> f)'
+            typecheck('(lambda (x y) y)')[0],
+            '(a -> b -> b)'
+        );
+    });
+    test('(lambda (x y z w) z)  :: (a -> b -> c -> d -> c)', function() {
+        assert.deepEqual(
+            typecheck('(lambda (x y z w) z)')[0],
+            '(a -> b -> c -> d -> c)'
         );
     });
     test('(lambda (x) (+ x 2)) :: (Int -> Int)', function() {
