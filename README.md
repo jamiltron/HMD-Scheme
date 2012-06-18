@@ -20,16 +20,16 @@ This takes a lot of influence/code-adaptation from:
 
 Currently Supports
 --------------
-* Type infers lambdas
-* Type infers atoms
-* Type infers basic function application
-* Type infers let and let* (thinking about removing let and just making let* let)
-* Type infers non-polymorphic lists (polymorphic lists are illegal)
-* Type infers pairs (but doesn't evaluate yet, still in the air about the syntax)
+* Type infers lambdas.
+* Type infers atoms.
+* Type infers basic function application.
+* Type infers let and let* (thinking about removing let and just making let* let).
+* Type infers non-polymorphic lists (polymorphic lists are illegal).
+* Type infers pairs (but doesn't evaluate yet, still in the air about the syntax).
 
 TODO
 ----
-* Type infer whole programs and begin
-* Add algebraic data types
-* Get the live-demo working
-* Learn [Code Mirror] (codemirror.net)
+* Type infer whole programs and begin.
+* Add algebraic data types.
+* Get the live-demo working.
+* Learn [Code Mirror](www.codemirror.net).
