@@ -371,13 +371,19 @@ suite('Lambda:\t', function() {
     });
     test('recursive lambda via def', function() {
         assert.deepEqual(
-            evalS(['begin', ['def', 'fact', ['lambda', ['n'], ['if', ['=', 'n', 0], 1, ['*', 'n', ['fact', ['-', 'n', 1]]]]]], ['fact', 3]], {}),
+            evalS(['begin', ['def', 'fact', ['lambda', ['n'], 
+                                             ['if', ['=', 'n', 0], 1, 
+                                              ['*', 'n', 
+                                               ['fact', ['-', 'n', 1]]]]]], ['fact', 3]], {}),
             6
         );
     });
     test('recursive lambda via defn', function() {
         assert.deepEqual(
-            evalS(['begin', ['defn', 'fact', ['n'], ['if', ['=', 'n', 0], 1, ['*', 'n', ['fact', ['-', 'n', 1]]]]], ['fact', 3]], {}),
+            evalS(['begin', ['defn', 'fact', ['n'], 
+                             ['if', ['=', 'n', 0], 1, 
+                              ['*', 'n', 
+                               ['fact', ['-', 'n', 1]]]]], ['fact', 3]], {}),
             6
         );
     });
@@ -410,238 +416,279 @@ suite('Typecheck atoms:\t', function() {
     });
 });    
 
-// suite('Typecheck lists:\t', function() {
-//     test('\'(4 5 6) :: (Int)', function() {
-//         assert.deepEqual(
-//             typecheck([['quote', [4, 5, 6]]])[0],
-//             '(Int)'
-//         );
-//     });
-//     test('\'(#t #f #t) :: (Bool)', function() {
-//         assert.deepEqual(
-//             typecheck([['quote', ['#t', '#f', '#t']]])[0],
-//             '(Bool)'
-//         );
-//     });
-// });
+suite('Typecheck lists:\t', function() {
+    test("'() :: (Nil)", function() {
+        assert.deepEqual(
+            typecheck([['quote', []]])[0],
+            '(Nil)'
+        );
+    });
+    test('(list 4 5 6) :: (Int)', function() {
+        assert.deepEqual(
+            typecheck([['list', 4, 5, 6]])[0],
+            '(Int)'
+        );
+    });
+    test('(list #t #f #t) :: (Bool)', function() {
+        assert.deepEqual(
+            typecheck([['list', '#t', '#f', '#t']])[0],
+            '(Bool)'
+        );
+    });
+    test('(list "\\c" "\\a" "\\t") :: (Char)', function() {
+        assert.deepEqual(
+            typecheck([['list', "\\c", "\\a", "\\t"]])[0],
+            '(Char)'
+        );
+    }); 
+    test('(list 1 #t "\\c") :: Error', function() {
+        assert.throws(function () {
+            typecheck([['list', 1, '#t', "\\c"]]);
+        });
+    });
+    test('(list (list 1 2) (list 3 4)) :: ((Int))', function() {
+        assert.deepEqual(
+            typecheck([['list', ['list', 1, 2], ['list', 3, 4]]])[0],
+            '((Int))'
+        );
+    }); 
+    test('(list (list 1 2) (list 3 4)) :: ((Int))', function() {
+        assert.deepEqual(
+            typecheck([['list', ['list', 1, 2], ['list', 3, 4]]])[0],
+            '((Int))'
+        );
+    }); 
+    test('(list (list (list #t) (list #f)) (list (list #f) (list #t))) :: (((Bool)))', function() {
+        assert.deepEqual(
+            typecheck([['list', ['list', ['list', '#t'], ['list', '#f']],
+                        ['list', ['list', '#f'], ['list', '#t']]]])[0],
+            '(((Bool)))'
+        );
+    }); 
+});
 
-// // suite('Typecheck functions:', function() {
-// //     test('+  :: (Int -> Int -> Int)', function() {
-// //         assert.deepEqual(
-// //             typecheck('+')[0],
-// //             '(Int -> Int -> Int)'
-// //         );
-// //     });
-// //     test('-  :: (Int -> Int -> Int)', function() {
-// //         assert.deepEqual(
-// //             typecheck('-')[0],
-// //             '(Int -> Int -> Int)'
-// //         );
-// //     });
-// //     test('*  :: (Int -> Int -> Int)', function() {
-// //         assert.deepEqual(
-// //             typecheck('*')[0],
-// //             '(Int -> Int -> Int)'
-// //         );
-// //     });
-// //     test('/  :: (Int -> Int -> Int)', function() {
-// //         assert.deepEqual(
-// //             typecheck('/')[0],
-// //             '(Int -> Int -> Int)'
-// //         );
-// //     });
-// //     test('<  :: (Int -> Int -> Bool)', function() {
-// //         assert.deepEqual(
-// //             typecheck('<')[0],
-// //             '(Int -> Int -> Bool)'
-// //         );
-// //     });
-// //     test('>  :: (Int -> Int -> Bool)', function() {
-// //         assert.deepEqual(
-// //             typecheck('>')[0],
-// //             '(Int -> Int -> Bool)'
-// //         );
-// //     });
-// //     test('<= :: (Int -> Int -> Bool)', function() {
-// //         assert.deepEqual(
-// //             typecheck('<=')[0],
-// //             '(Int -> Int -> Bool)'
-// //         );
-// //     });
-// //     test('>= :: (Int -> Int -> Bool)', function() {
-// //         assert.deepEqual(
-// //             typecheck('>=')[0],
-// //             '(Int -> Int -> Bool)'
-// //         );
-// //     });
-// //     test('!= :: (Int -> Int -> Bool)', function() {
-// //         assert.deepEqual(
-// //             typecheck('!=')[0],
-// //             '(a -> a -> Bool)'
-// //         );
-// //     });
-// //     test('=  :: (Int -> Int -> Bool)', function() {
-// //         assert.deepEqual(
-// //             typecheck('=')[0],
-// //             '(a -> a -> Bool)'
-// //         );
-// //     });
-// // });    
+suite('Typecheck functions:', function() {
+    test('+  :: (Int -> Int -> Int)', function() {
+        assert.deepEqual(
+            typecheck(['+'])[0],
+            '(Int -> Int -> Int)'
+        );
+    });
+    test('-  :: (Int -> Int -> Int)', function() {
+        assert.deepEqual(
+            typecheck(['-'])[0],
+            '(Int -> Int -> Int)'
+        );
+    });
+    test('*  :: (Int -> Int -> Int)', function() {
+        assert.deepEqual(
+            typecheck(['*'])[0],
+            '(Int -> Int -> Int)'
+        );
+    });
+    test('/  :: (Int -> Int -> Int)', function() {
+        assert.deepEqual(
+            typecheck(['/'])[0],
+            '(Int -> Int -> Int)'
+        );
+    });
+    test('<  :: (Int -> Int -> Bool)', function() {
+        assert.deepEqual(
+            typecheck(['<'])[0],
+            '(Int -> Int -> Bool)'
+        );
+    });
+    test('>  :: (Int -> Int -> Bool)', function() {
+        assert.deepEqual(
+            typecheck(['>'])[0],
+            '(Int -> Int -> Bool)'
+        );
+    });
+    test('<= :: (Int -> Int -> Bool)', function() {
+        assert.deepEqual(
+            typecheck(['<='])[0],
+            '(Int -> Int -> Bool)'
+        );
+    });
+    test('>= :: (Int -> Int -> Bool)', function() {
+        assert.deepEqual(
+            typecheck(['>='])[0],
+            '(Int -> Int -> Bool)'
+        );
+    });
+    test('!= :: (a -> a -> Bool)', function() {
+        assert.deepEqual(
+            typecheck(['!='])[0],
+            '(a -> a -> Bool)'
+        );
+    });
+    test('=  :: (Int -> Int -> Bool)', function() {
+        assert.deepEqual(
+            typecheck(['='])[0],
+            '(a -> a -> Bool)'
+        );
+    });
+});    
 
 
-// // suite('Typecheck application:', function() {
-// //     test('(+ 2 3)  :: Int', function() {
-// //         assert.deepEqual(
-// //             typecheck('(+ 2 3)')[0],
-// //             'Int'
-// //         );
-// //     });
-// //     test('(+ 2 (- 3 2))  :: Int', function() {
-// //         assert.deepEqual(
-// //             typecheck('(+ 2 (- 3 2))')[0],
-// //             'Int'
-// //         );
-// //     });
-// // });
+suite('Typecheck basic math application:', function() {
+    test('(+ 2 3)  :: Int', function() {
+        assert.deepEqual(
+            typecheck([['+', 2, 3]])[0],
+            'Int'
+        );
+    });
+    test('(+ 2 (- 3 2))  :: Int', function() {
+        assert.deepEqual(
+            typecheck([['+', 2, ['-', 3, 2]]])[0],
+            'Int'
+        );
+    });
+    test('(+ 1 #t) :: Error', function() {
+        assert.throws(function () {
+            typecheck([['+', 1, '#t']]);
+        });
+    });
+});
 
-// // suite('Typecheck lambda:', function() {
-// //     test('(lambda (x) x)', function() {
-// //         assert.deepEqual(
-// //             typecheck('(lambda (x) x)')[0],
-// //             '(a -> a)'
-// //         );
-// //     });
-// //     test('(lambda (x y) y)  :: (a -> b -> b)', function() {
-// //         assert.deepEqual(
-// //             typecheck('(lambda (x y) y)')[0],
-// //             '(a -> b -> b)'
-// //         );
-// //     });
-// //     test('(lambda (x y z w) z)  :: (a -> b -> c -> d -> c)', function() {
-// //         assert.deepEqual(
-// //             typecheck('(lambda (x y z w) z)')[0],
-// //             '(a -> b -> c -> d -> c)'
-// //         );
-// //     });
-// //     test('(lambda (x) (+ x 2)) :: (Int -> Int)', function() {
-// //         assert.deepEqual(
-// //             typecheck('(lambda (x) (+ x 2))')[0],
-// //             '(Int -> Int)'
-// //         );
-// //     });
-// //     test('((lambda (x) (+ x 2)) 2) :: Int', function() {
-// //         assert.deepEqual(
-// //             typecheck('((lambda (x) (+ x 2)) 2)')[0],
-// //             'Int'
-// //         );
-// //     });
-// // });
+suite('Typecheck lambda:', function() {
+    test('(lambda (x) x) :: (a -> a)', function() {
+        assert.deepEqual(
+            typecheck([['lambda', ['x'], 'x']])[0],
+            '(a -> a)'
+        );
+    });
+    test('(lambda (x y) y)  :: (a -> b -> b)', function() {
+        assert.deepEqual(
+            typecheck([['lambda', ['x', 'y'], 'y']])[0],
+            '(a -> b -> b)'
+        );
+    });
+    test('(lambda (x y z w) z)  :: (a -> b -> c -> d -> c)', function() {
+        assert.deepEqual(
+            typecheck([['lambda', ['x', 'y', 'z', 'w'], 'z']])[0],
+            '(a -> b -> c -> d -> c)'
+        );
+    });
+    test('(lambda (x) (+ x 2)) :: (Int -> Int)', function() {
+        assert.deepEqual(
+            typecheck([['lambda', ['x'], ['+', 'x', 2]]])[0],
+            '(Int -> Int)'
+        );
+    });
+    test('((lambda (x) (+ x 2)) 2) :: Int', function() {
+        assert.deepEqual(
+            typecheck([[['lambda', ['x'], ['+', 'x', 2]], 2]])[0],
+            'Int'
+        );
+    });
+});
 
-// // suite('Typecheck defn:', function() {
-// //     test('(defn a (x) x)', function() {
-// //         assert.deepEqual(
-// //             typecheck('(defn a (x) x)')[0],
-// //             '(a -> a)'
-// //         );
-// //     });
-// //     test('(defn a (x y) y)  :: (a -> b -> b)', function() {
-// //         assert.deepEqual(
-// //             typecheck('(defn a (x y) y)')[0],
-// //             '(a -> b -> b)'
-// //         );
-// //     });
-// //     test('(defn a (x y z w) z)  :: (a -> b -> c -> d -> c)', function() {
-// //         assert.deepEqual(
-// //             typecheck('(defn a (x y z w) z)')[0],
-// //             '(a -> b -> c -> d -> c)'
-// //         );
-// //     });
-// //     test('(defn a (x) (+ x 2)) :: (Int -> Int)', function() {
-// //         assert.deepEqual(
-// //             typecheck('(defn a (x) (+ x 2))')[0],
-// //             '(Int -> Int)'
-// //         );
-// //     });
-// // });
+suite('Typecheck defn:', function() {
+    test('(defn a (x) x)', function() {
+        assert.deepEqual(
+            typecheck([['defn', 'a', ['x'], 'x']])[0],
+            '(a -> a)'
+        );
+    });
+    test('(defn a (x y) y)  :: (a -> b -> b)', function() {
+        assert.deepEqual(
+            typecheck([['defn', 'a', ['x', 'y'], 'y']])[0],
+            '(a -> b -> b)'
+        );
+    });
+    test('(defn a (x y z w) z)  :: (a -> b -> c -> d -> c)', function() {
+        assert.deepEqual(
+            typecheck([['defn', 'a', ['x', 'y', 'z', 'w'], 'z']])[0],
+            '(a -> b -> c -> d -> c)'
+        );
+    });
+    test('(defn a (x) (+ x 2)) :: (Int -> Int)', function() {
+        assert.deepEqual(
+            typecheck([['defn', 'a', ['x'], ['+', 'x', 2]]])[0],
+            '(Int -> Int)'
+        );
+    });
+});
 
-// // suite('Typecheck def:', function() {
-// //     test('(def a 1)', function() {
-// //         assert.deepEqual(
-// //             typecheck('(def a 1)')[0],
-// //             'Int'
-// //         );
-// //     });
-// //     test('(def a #t)', function() {
-// //         assert.deepEqual(
-// //             typecheck('(def a #t)')[0],
-// //             'Bool'
-// //         );
-// //     });
-// //     test('(def a <)', function() {
-// //         assert.deepEqual(
-// //             typecheck('(def a <)')[0],
-// //             '(Int -> Int -> Bool)'
-// //         );
-// //     });
-// //     test('(def a (lambda (x y) x))', function() {
-// //         assert.deepEqual(
-// //             typecheck('(def a (lambda (x y) x))')[0],
-// //             '(a -> b -> a)'
-// //         );
-// //     });
-// // });
+suite('Typecheck def:', function() {
+    test('(def a 1)', function() {
+        assert.deepEqual(
+            typecheck([['def', 'a', 1]])[0],
+            'Int'
+        );
+    });
+    test('(def a #t)', function() {
+        assert.deepEqual(
+            typecheck([['def', 'a', '#t']])[0],
+            'Bool'
+        );
+    });
+    test('(def a <)', function() {
+        assert.deepEqual(
+            typecheck([['def', 'a', '<']])[0],
+            '(Int -> Int -> Bool)'
+        );
+    });
+    test('(def a (lambda (x y) x))', function() {
+        assert.deepEqual(
+            typecheck([['def', 'a', ['lambda', ['x', 'y'], 'x']]])[0],
+            '(a -> b -> a)'
+        );
+    });
+});
 
-// // suite('Typecheck let:', function () {
-// //     test('(let (x 1) x) :: Int', function() {
-// //         assert.deepEqual(
-// //             typecheck('(let (x 1) x)')[0],
-// //             'Int'
-// //         );
-// //     });
-// //     test('(let (x 1 y #t) y):: Bool', function() {
-// //         assert.deepEqual(
-// //             typecheck('(let (x 1 y #t) y)')[0],
-// //             'Bool'
-// //         );
-// //     });
-// // });
+suite('Typecheck let:', function () {
+    test('(let (x 1) x) :: Int', function() {
+        assert.deepEqual(
+            typecheck([['let', ['x', 1], 'x']])[0],
+            'Int'
+        );
+    });
+    test('(let (x 1 y #t) y):: Bool', function() {
+        assert.deepEqual(
+            typecheck([['let', ['x', 1, 'y', '#t'], 'y']])[0],
+            'Bool'
+        );
+    });
+});
 
-// // suite('Typecheck let*:', function () {
-// //     test('(let* (x 1 y x) x) :: Int', function() {
-// //         assert.deepEqual(
-// //             typecheck('(let* (x 1 y x) x)')[0],
-// //             'Int'
-// //         );
-// //     });
-// //     test('(let* (x 2 y (< x 3)) y):: Bool', function() {
-// //         assert.deepEqual(
-// //             typecheck('(let* (x 2 y (< x 3)) y)')[0],
-// //             'Bool'
-// //         );
-// //     });
-// // });
+suite('Typecheck let*:', function () {
+    test('(let* (x 1 y x) x) :: Int', function() {
+        assert.deepEqual(
+            typecheck([['let*', ['x', 1, 'y', 'x'], 'x']])[0],
+            'Int'
+        );
+    });
+    test('(let* (x 2 y (< 3 x)) y):: Bool', function() {
+        assert.deepEqual(
+            typecheck([['let*', ['x', 2, 'y', ['<', 3, 'x']], 'y']])[0],
+            'Bool'
+        );
+    });
+});
 
-// // suite('Typecheck if:', function () {
-// //     test('(if #t 1 2)', function() {
-// //         assert.deepEqual(
-// //             typecheck('(if #t 1 2)')[0],
-// //             'Int'
-// //         );
-// //     });
-// //     test('(if #t #f #t)', function() {
-// //         assert.deepEqual(
-// //             typecheck('(if #t #f #t)')[0],
-// //             'Bool'
-// //         );
-// //     });
-// //     test('non-boolean if-clause should throw an error', function() {
-// //         assert.throws(function () {
-// //             typecheck('(if 1 #t #f)');
-// //         });
-// //     });
-// //     test('incongruent return types should throw an error', function() {
-// //         assert.throws(function () {
-// //             typecheck('(if #f #t 1)');
-// //         });
-// //     });
-// // });
+suite('Typecheck if:', function () {
+    test('(if #t 1 2)', function() {
+        assert.deepEqual(
+            typecheck([['if', '#t', 1, 2]])[0],
+            'Int'
+        );
+    });
+    test('(if #t #f #t)', function() {
+        assert.deepEqual(
+            typecheck([['if', '#t', '#f', '#t']])[0],
+            'Bool'
+        );
+    });
+    test('non-boolean if-clause should throw an error', function() {
+        assert.throws(function () {
+            typecheck([['if', 1, '#t', '#f']]);
+        });
+    });
+    test('incongruent return types should throw an error', function() {
+        assert.throws(function () {
+            typecheck([['if', '#f', '#t', 1]]);
+        });
+    });
+});

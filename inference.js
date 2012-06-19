@@ -71,7 +71,11 @@ var analyse = function(expr, env, specific) {
     var defnt, funt, argt, new_specific, new_env, next_node, result_type, ret_type;
     specific = typeof specific !== 'undefined' ? specific : {};
 
-    if (expr[0] === 'let') {
+    // empty list
+    if (typeof expr === 'object' && expr.length === 0) {
+        return List(Nil);
+
+    } else if (expr[0] === 'let') {
         new_env = clone(env);
         for (var i = 1; i < expr[1].length; i += 2) {
             defnt = analyse(expr[1][i], env, specific);
@@ -149,27 +153,23 @@ var analyse = function(expr, env, specific) {
         return Pair(t1, t2);
 
     // quote
-    // } else if (expr[0] === 'quote') {
-    //     if (typeof expr[1] === 'object' && expr[1][0] != 
-        // if (typeof expr[1] === 'number') {
-        //     return Int;
-        // } else if (typeof expr[1] === 'string') {
-        //     return Symbol;
-        // } else if (expr[1][0] === '"') {
-        //     return String;
-        // } else {
-            
-        // t1 = analyse(expr[1][0], env);
-        // if (expr[1].length > 1) {
-        //     for (i = 2; i < expr[1].length - 1; i++) {
-        //         t2 = analyse(expr[1][i], env);
-        //         unify(t1, t2);
-        //         t1 = t2;
-        //     }
-        //     t2 = analyse(expr[1][expr[1].length - 1], env);
-        //     unify(t1, t2);
-        // }
-        // return List(t1);
+    } else if (expr[0] === 'quote') {
+        if (expr.length > 2) {
+            throw new Error ("Quote parse error");
+        }
+        if (typeof expr[1] === 'string') {
+            return Sym;
+        }
+        return analyse(expr[1], env, specific);
+    } else if (expr[0] === 'list') {            
+        t1 = analyse(expr[1], env);
+        for (var i = 2; i < expr.length; i++) {
+            t2 = analyse(expr[i], env, specific);
+            unify(t1, t2);
+            t1 = t2;
+        }
+        return List(t1);
+        
     // function application
     } else if (typeof expr === 'object') {
         // get the type of the calling function
