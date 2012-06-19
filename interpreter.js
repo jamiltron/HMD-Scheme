@@ -9,6 +9,24 @@ var is_empty = function (m) {
     return true;
 };
 
+var value_eq = function(e1, e2) {
+    if (typeof e1 !== typeof e2) {
+        return false;
+    } else if (typeof e1 !== 'object') {
+        return e1 === e2;
+    } else {
+        if (e1.length !== e2.length) {
+            return false;
+        }
+        for (var i = 0; i < e1.length; i++) {
+            if (value_eq(e1[i], e2[i]) === false) {
+                return false;
+            }
+        }
+        return true;
+    }
+};
+
 // This only takes 2 parameters until I get the
 // type system more up to par.
 var arithmetic = function (f, expr, env) {
@@ -64,7 +82,7 @@ var lookup = function (env, v) {
 
 // evaluate the given expression in the context of the given environment
 var evalS = function (expr, env) {
-    var res, newenv, i, bind;
+    var res, newenv, i, bind, args;
     // numbers eval to themselves
     if (typeof expr === 'number') {
         return expr;
@@ -75,8 +93,12 @@ var evalS = function (expr, env) {
         return expr;
     }
 
+
     // strings are variable references
     else if (typeof expr === 'string') {
+        if (expr[0] === "\\") {
+            return expr;
+        }
         return lookup(env, expr);
     }
 
@@ -86,12 +108,10 @@ var evalS = function (expr, env) {
         return null;
         break;
     case '=':
-        for (i = 1; i < expr.length - 1; i++) {
-            if (evalS(expr[i], env) !== evalS(expr[i + 1], env)) {
-                return '#f';
-            }
+        if (value_eq(evalS(expr[1], env), evalS(expr[2], env))) {
+            return '#t';
         }
-        return '#t';
+        return '#f';
         break;
     case '+':
         return arithmetic(function(x,y) { return x + y; }, expr, env);
@@ -160,10 +180,11 @@ var evalS = function (expr, env) {
     case '.':
         return [".", evalS(expr[1], env), evalS(expr[2], env)];
     case 'car':
-        return expr[1][0];
+        return evalS(expr[1], env)[0];
         break;
     case 'cdr':
-        return expr[1].slice(1, expr[1].length);
+        res = evalS(expr[1]);
+        return res.slice(1, res.length);
         break;
     case '<':
         if (evalS(expr[1], env) < evalS(expr[2], env)) {
@@ -190,10 +211,10 @@ var evalS = function (expr, env) {
         return '#f';
         break;
     case '!=':
-        if (evalS(expr[1], env) !== evalS(expr[2], env)) {
-            return '#t';
+        if (value_eq(evalS(expr[1], env), evalS(expr[2], env))) {
+            return '#f';
         }
-        return '#f';
+        return '#t';
         break;
     case 'if':
         if (evalS(expr[1], env) === '#t') {
@@ -202,7 +223,17 @@ var evalS = function (expr, env) {
         return evalS(expr[3], env);
         break;
     case 'quote':
+        if (expr.length > 2) {
+            throw new Error("Malformed quote");
+        }
         return expr[1];
+        break;
+    case 'list':
+        args = [];
+        for (var i = 1; i < expr.length; i++) {
+            args.push(evalS(expr[i], env));
+        }
+        return args;
         break;
     case 'let-one':
         bind = {};

@@ -78,10 +78,16 @@ var analyse = function(expr, env, specific) {
             new_env[expr[1][i - 1]] = defnt;
         }
         return analyse(expr[2], new_env, specific);
-
-    } else if (expr[0] === 'def') {
-        new_env = clone(env);
-        new_specific = clone(specific);
+  
+    } else if (expr[0] === 'if') {
+        funt = analyse(expr[1], env, specific);
+        // since the if-clause must be boolean
+        unify(funt, Bool);
+        defnt = analyse(expr[2], env, specific);
+        argt  = analyse(expr[3], env, specific);
+        unify(defnt, argt);
+        return defnt;
+        
         
     } else if (expr[0] === 'lambda') {
         args = [];
@@ -94,6 +100,32 @@ var analyse = function(expr, env, specific) {
         }
         result_type = analyse(expr[2], new_env, new_specific);
         return new Fn(args.concat(result_type));        
+
+    } else if (expr[0] === 'def') {
+        new_env = clone(env);
+        new_specific = clone(specific);
+        funt = new TypeVariable();
+        new_env[expr[1]] = funt;
+        new_specific[funt] = true;
+        defnt = analyse(expr[2], new_env, new_specific);
+        unify(funt, defnt);
+        return defnt;
+
+    } else if (expr[0] === 'defn') {
+        args = []
+        new_env = clone(env);
+        new_specific = clone(specific);
+        funt = new TypeVariable();
+        new_env[expr[1]] = funt;
+        new_specific[funt] = true;
+        for (var i = 0; i < expr[2].length; i++) {
+            args.push(new TypeVariable());
+            new_env[expr[2][i]] = args[i];
+            new_specific[args[j]] = true;
+        }
+        result_type = new Fn(args.concat(analyse(expr[3], new_env, new_specific)));
+        unify(funt, result_type);
+        return result_type;        
 
     } else if (expr[0] === 'let*') {
         new_env = clone(env);
@@ -116,19 +148,28 @@ var analyse = function(expr, env, specific) {
         t2 = analyse(expr[2], env);
         return Pair(t1, t2);
 
-    // lists
-    } else if (expr[0] === 'quote') {
-        t1 = analyse(expr[1][0], env);
-        if (expr[1].length > 1) {
-            for (i = 2; i < expr[1].length - 1; i++) {
-                t2 = analyse(expr[1][i], env);
-                unify(t1, t2);
-                t1 = t2;
-            }
-            t2 = analyse(expr[1][expr[1].length - 1], env);
-            unify(t1, t2);
-        }
-        return List(t1);
+    // quote
+    // } else if (expr[0] === 'quote') {
+    //     if (typeof expr[1] === 'object' && expr[1][0] != 
+        // if (typeof expr[1] === 'number') {
+        //     return Int;
+        // } else if (typeof expr[1] === 'string') {
+        //     return Symbol;
+        // } else if (expr[1][0] === '"') {
+        //     return String;
+        // } else {
+            
+        // t1 = analyse(expr[1][0], env);
+        // if (expr[1].length > 1) {
+        //     for (i = 2; i < expr[1].length - 1; i++) {
+        //         t2 = analyse(expr[1][i], env);
+        //         unify(t1, t2);
+        //         t1 = t2;
+        //     }
+        //     t2 = analyse(expr[1][expr[1].length - 1], env);
+        //     unify(t1, t2);
+        // }
+        // return List(t1);
     // function application
     } else if (typeof expr === 'object') {
         // get the type of the calling function
@@ -182,6 +223,8 @@ var get_type = function (name, env, specific) {
         return Int;
     } else if (name === "Bool") {
         return Bool;
+    } else if (name === "Char" || (typeof name === 'string' && name[0] == "\\")) {
+        return Ch;
     } else if (name === "String") {
         return Str;
     } else {
@@ -325,9 +368,12 @@ var List      = function (x) {
 var t1 = new TypeVariable();
 var t2 = new TypeVariable();
 
+var Ch        = new TypeOperator("Char", []);
+var Str       = List(Ch);
 var Int       = new TypeOperator("Int", []);
 var Bool      = new TypeOperator("Bool", []); 
 var Str       = new TypeOperator("String", []); 
+var Sym       = new TypeOperator("Symbol", []);
 var Nil       = new TypeOperator("Nil", []);
 
 // make inferred types look a little nicer
@@ -359,8 +405,11 @@ var pretty_print = function (result) {
     }
 };
   
-// run the type inference algorithm for an unparsed statement  
-var typecheck = function(statement) {
+// run the type inference algorithm for an entire (parsed) program
+var typecheck = function(p) {
+    var e1 = new TypeVariable();
+    var e2 = new TypeVariable();
+    var result = [];
     var top_env   = {'#t':   Bool, 
                      '#f':   Bool,
                      'nil':  Nil,
@@ -372,15 +421,16 @@ var typecheck = function(statement) {
                      '>':    Fn([Int, Int, Bool]),
                      '<=':   Fn([Int, Int, Bool]),
                      '>=':   Fn([Int, Int, Bool]),
-                     '=':    Fn([Int, Int, Bool]),
-                     '!=':   Fn([Int, Int, Bool]),
+                     '=':    Fn([e1, e1, Bool]),
+                     '!=':   Fn([e2, e2, Bool]),
                      'car':  Fn([List(t1), t1]),
                      'cdr':  Fn([List(t1), List(t1)]),
                      'cons': Fn([t1, List(t1), List(t1)]),
                      '.':    Fn([t1, t2, Pair(t1, t2)])};
-    var p = parse(statement);
-    var result = p.map(function (x) { return pretty_print(analyse(x, top_env)); });
-    gName = [FIRST_LOW];
+    for (var i = 0; i < p.length; i++) {
+        result.push(pretty_print(analyse(p[i], top_env)));
+        gName = [FIRST_LOW];
+    }
     return result;
 };
 
