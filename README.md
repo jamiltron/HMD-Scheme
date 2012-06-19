@@ -13,6 +13,7 @@ Influences
 ----------
 This takes a lot of influence/code-adaptation from:
 
+* [TAPL, Benjamin Pierce](http://www.cis.upenn.edu/~bcpierce/tapl/)
 * [Nathan's University](http://nathansuniversity.com/).
 * [Roy/Brian McKenna](http://roy.brianmckenna.org/).
 * [Robert Smallshire](http://www.smallshire.org.uk/).
