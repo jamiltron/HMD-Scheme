@@ -1,4 +1,4 @@
-HMD Scheme
+[HMD Scheme](http://hmdscheme.herokuapp.com)
 ==========
 
 About
@@ -31,6 +31,6 @@ Currently Supports
 TODO
 ----
 * Add better errors.
-* Fix up the web demo.
+* Fix up the [web demo](http://hmdscheme.herokuapp.com).
 * Add algebraic data types.
 * Learn [Code Mirror](www.codemirror.net) better.
