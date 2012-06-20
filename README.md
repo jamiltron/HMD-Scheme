@@ -21,7 +21,7 @@ This takes a lot of influence/code-adaptation from:
 
 Currently Supports
 --------------
-* Type infers lambdas.
+* Type infers def/defn/lambdas.
 * Type infers atoms.
 * Type infers basic function application.
 * Type infers let and let* (thinking about removing let and just making let* let).
@@ -30,7 +30,7 @@ Currently Supports
 
 TODO
 ----
-* Type infer whole programs and begin.
+* Add better errors.
+* Fix up the web demo.
 * Add algebraic data types.
-* Get the live-demo working.
-* Learn [Code Mirror](www.codemirror.net).
+* Learn [Code Mirror](www.codemirror.net) better.

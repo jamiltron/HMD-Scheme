@@ -352,7 +352,7 @@ HMDScheme = (function(){
           pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, d) { return parseInt(d, 10); })(pos0, result0[0]);
+          result0 = (function(offset, d, ds) { return parseInt(d + ds.join(""), 10); })(pos0, result0[0], result0[1]);
         }
         if (result0 === null) {
           pos = pos0;
@@ -461,7 +461,7 @@ HMDScheme = (function(){
           pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, s) { return [['list'].concat(s)]; })(pos0, result0[1]);
+          result0 = (function(offset, s) { return ['list'].concat(s); })(pos0, result0[1]);
         }
         if (result0 === null) {
           pos = pos0;

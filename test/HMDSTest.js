@@ -309,6 +309,12 @@ suite('Cdr:\t', function() {
             [5,6]
         );
     });
+    test('cdr multiple values from a list', function() {
+        assert.deepEqual(
+            evalS(['cdr',['cdr',['cdr', ['list', 3,4,5,6]]]], {}),
+            [6]
+        );
+    });
 });
 
 suite('Let-one:\t', function() {
@@ -522,7 +528,7 @@ suite('Typecheck functions:', function() {
             '(a -> a -> Bool)'
         );
     });
-    test('=  :: (Int -> Int -> Bool)', function() {
+    test('=  :: (a -> a -> Bool)', function() {
         assert.deepEqual(
             typecheck(['='])[0],
             '(a -> a -> Bool)'
@@ -690,5 +696,33 @@ suite('Typecheck if:', function () {
         assert.throws(function () {
             typecheck([['if', '#f', '#t', 1]]);
         });
+    });
+});
+
+suite('Typecheck def + lambda:', function () {
+    test('(def a (lambda (x) x)) :: (a -> a)', function() {
+        assert.deepEqual(
+            typecheck([['def', 'a', ['lambda', ['x'], 'x']]])[0],
+            '(a -> a)'
+        );
+    });
+    test('(def inc (lambda (x) (+ 1 x))) :: (Int -> Int)', function() {
+        assert.deepEqual(
+            typecheck([['def', 'inc', ['lambda', ['x'], ['+', 1, 'x']]]])[0],
+            '(Int -> Int)'
+        );
+    });
+    test('(def gt3 (lambda (x) (if (> x 3) 1 0))) :: (Int -> Int)', function() {
+        assert.deepEqual(
+            typecheck([['def', 'gt3', ['lambda', ['x'], ['if', ['>', 'x', 3], 1, 0]]]])[0],
+            '(Int -> Int)'
+        );
+    });
+    test('(def mk-addr (lambda (x) (lambda (y) (+ x y)))) :: (Int -> (Int -> Int))', function() {
+        assert.deepEqual(
+            typecheck([['def', 'mk-addr', ['lambda', ['x'],
+                                           ['lambda', ['y'], ['+', 'x', 'y']]]]])[0],
+            '(Int -> (Int -> Int))'
+        );
     });
 });

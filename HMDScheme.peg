@@ -3,7 +3,7 @@ start =
       { return exprs; }
 
 expr =
-    form:(sexpr / qexpr / digit / atom / str) ws
+    form:(chr / sexpr / qexpr / digit / atom / str) ws
     { return form; }
 
 atom =
@@ -19,12 +19,20 @@ qexpr =
     { return ['quote', e]; }
 
 digit =
-    d:[1-9][0-9]*
-    { return parseInt(d, 10); }
+    d:[1-9] ds:[0-9]*
+    { return parseInt(d + ds.join(""), 10); }
+
+chr = 
+    '\'' s:strchar '\''
+    { return s; }
 
 str =
-   s:"\"".*"\""
-   { return s; }
+   '"' s:strchar+ '"'
+   { return ['list'].concat(s); }
+
+strchar =
+    c:validchar
+    { return '\\' + c; }
 
 validchar =
     [0-9a-zA-Z_?!+-=@#$%^&*/<>]

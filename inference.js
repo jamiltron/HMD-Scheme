@@ -106,22 +106,29 @@ var analyse = function(expr, env, specific) {
         return new Fn(args.concat(result_type));        
 
     } else if (expr[0] === 'def') {
-        new_env = clone(env);
-        new_specific = clone(specific);
         funt = new TypeVariable();
-        new_env[expr[1]] = funt;
-        new_specific[funt] = true;
-        defnt = analyse(expr[2], new_env, new_specific);
+        env[expr[1]] = funt;
+        specific[funt] = true;
+        defnt = analyse(expr[2], env, specific);
+        unify(funt, defnt);
+        return defnt;
+
+    } else if (expr[0] === 'set!') {
+        if (typeof env[expr[1]] === 'undefined') {
+            throw new Error("set! error");
+        }
+        funt = env[expr[1]];
+        defnt = analyse(expr[2], env, specific);
         unify(funt, defnt);
         return defnt;
 
     } else if (expr[0] === 'defn') {
         args = []
+        funt = new TypeVariable();
+        env[expr[1]] = funt;
+        specific[funt] = true;
         new_env = clone(env);
         new_specific = clone(specific);
-        funt = new TypeVariable();
-        new_env[expr[1]] = funt;
-        new_specific[funt] = true;
         for (var i = 0; i < expr[2].length; i++) {
             args.push(new TypeVariable());
             new_env[expr[2][i]] = args[i];
@@ -174,6 +181,8 @@ var analyse = function(expr, env, specific) {
     } else if (typeof expr === 'object') {
         // get the type of the calling function
         var fn_type = analyse(expr[0], env, specific);
+        // back up the origi
+        var bk_type = fresh(fn_type);
         args = [];
         // analyse all of the arguments
         for (var i = 1; i < expr.length; i++) {
@@ -184,6 +193,8 @@ var analyse = function(expr, env, specific) {
         result_type = new TypeVariable();
         ret_type = new Fn(args.concat(result_type));
         unify(ret_type, fn_type);
+        // reset types
+        env[expr[0]] = bk_type;
         return result_type;
                       
     } else {
@@ -409,6 +420,7 @@ var pretty_print = function (result) {
 var typecheck = function(p) {
     var e1 = new TypeVariable();
     var e2 = new TypeVariable();
+    var specific = {};
     var result = [];
     var top_env   = {'#t':   Bool, 
                      '#f':   Bool,
@@ -428,7 +440,7 @@ var typecheck = function(p) {
                      'cons': Fn([t1, List(t1), List(t1)]),
                      '.':    Fn([t1, t2, Pair(t1, t2)])};
     for (var i = 0; i < p.length; i++) {
-        result.push(pretty_print(analyse(p[i], top_env)));
+        result.push(pretty_print(analyse(p[i], top_env, specific)));
         gName = [FIRST_LOW];
     }
     return result;
