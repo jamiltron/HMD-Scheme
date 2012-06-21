@@ -73,8 +73,8 @@ var analyse = function(expr, env, specific) {
 
     // empty list
     if (typeof expr === 'object' && expr.length === 0) {
-        return List(Nil);
-
+        return List(new TypeVariable());
+        
     } else if (expr[0] === 'let') {
         new_env = clone(env);
         for (var i = 1; i < expr[1].length; i += 2) {
@@ -166,9 +166,14 @@ var analyse = function(expr, env, specific) {
         }
         if (typeof expr[1] === 'string') {
             return Sym;
+        } else if (typeof expr[1] === 'number') {
+            return Int;
         }
-        return analyse(expr[1], env, specific);
-    } else if (expr[0] === 'list') {            
+        return analyse(['list'].concat(expr[1]), env, specific);
+    } else if (expr[0] === 'list') { 
+        if (expr.length === 1) {
+            return List(new TypeVariable);
+        }
         t1 = analyse(expr[1], env);
         for (var i = 2; i < expr.length; i++) {
             t2 = analyse(expr[i], env, specific);

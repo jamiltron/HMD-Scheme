@@ -422,11 +422,12 @@ suite('Typecheck atoms:\t', function() {
     });
 });    
 
+
 suite('Typecheck lists:\t', function() {
     test("'() :: (Nil)", function() {
         assert.deepEqual(
             typecheck([['quote', []]])[0],
-            '(Nil)'
+            '(a)'
         );
     });
     test('(list 4 5 6) :: (Int)', function() {
@@ -471,6 +472,27 @@ suite('Typecheck lists:\t', function() {
             '(((Bool)))'
         );
     }); 
+    test('(list)', function() {
+        assert.deepEqual(
+            typecheck([['list']])[0],
+            '(a)'
+        );
+    }); 
+});
+
+suite('Typecheck cons:\t', function() {
+    test("(cons 2 '()) :: (Int)", function() {
+        assert.deepEqual(
+            typecheck([['cons', 2, ['quote', []]]])[0],
+            '(Int)'
+        );
+    });
+    test("(cons 2 '(1)) :: (Int)", function() {
+        assert.deepEqual(
+            typecheck([['cons', 2, ['quote', [1]]]])[0],
+            '(Int)'
+        );
+    });
 });
 
 suite('Typecheck functions:', function() {
