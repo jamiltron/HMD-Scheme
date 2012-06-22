@@ -21,16 +21,17 @@ This takes a lot of influence/code-adaptation from:
 
 Currently Supports
 --------------
+* Type infers non-polymorphic algebraic data types (poly's to add).
 * Type infers def/defn/lambdas.
 * Type infers atoms.
-* Type infers basic function application.
+* Type infers function application.
 * Type infers let and let* (thinking about removing let and just making let* let).
 * Type infers non-polymorphic lists (polymorphic lists are illegal).
-* Type infers pairs (but doesn't evaluate yet, still in the air about the syntax).
 
 TODO
 ----
 * Add better errors.
+* Add polymorphic algebraic data types.
+* Add pattern matching.
+* Add type annotations.
 * Fix up the [web demo](http://hmdscheme.herokuapp.com).
-* Add algebraic data types.
-* Learn [Code Mirror](www.codemirror.net) better.
