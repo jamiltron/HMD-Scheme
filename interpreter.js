@@ -129,10 +129,19 @@ var evalS = function (expr, env) {
         throw new Error("undefined form");
         break;
     case 'data':
-        if (lookup(env, expr[1]) !== null) {
-            throw new Error('already defined');
+        if (typeof expr[1] === 'string') {
+            if (lookup(env, expr[1]) !== null) {
+                throw new Error('already defined');
+            }
+            add_binding(env, expr[1], '#<undefined>');
+        } else {
+            if (lookup(env, expr[1][0]) !== null) {
+                throw new Error('already defined');
+            }
+            add_binding(env, expr[1][0], '#undefined>');
         }
-        add_binding(env, expr[1], '#<undefined>');
+                
+
         for (var i = 0; i < expr[2].length; i++) {
             var constructor = expr[2][i][0];
             if (lookup(env, constructor) !== null) {
