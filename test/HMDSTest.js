@@ -30,6 +30,12 @@ suite('Atoms and lists:\t', function() {
             null
         );
     });
+    test('empty list', function () {
+        assert.deepEqual(
+            evalS(['list'], {}),
+            []
+        );
+    });
     test('a list', function() {
         assert.deepEqual(
             evalS(['list', 1, 2, 3], {}),
@@ -40,6 +46,51 @@ suite('Atoms and lists:\t', function() {
         assert.deepEqual(
             evalS("\\c", {}),
             "\\c"
+        );
+    });
+});
+
+suite('Dotted pairs:\t', function () {
+    test('basic dotted pair', function () {
+        assert.deepEqual(
+            evalS(['.', 1, 2], {}),
+            ['.', 1, 2]
+        );
+    });
+});
+
+suite('Data types:\t', function () {
+    test('basic data type', function () {
+        assert.deepEqual(
+            evalS(['data', 'datum', [['dd', 'Int']]], {}),
+            0
+        );
+    });
+    test('multiple constructors', function () {
+        assert.deepEqual(
+            evalS(['data', 'datum', [['di', 'Int'], ['dc', 'Char']]], {}),
+            0
+        );
+    });
+    test('constructing a data type', function () {
+        assert.deepEqual(
+            evalS(['begin', ['data', 'datum', [['di', 'Int'], ['dc', 'Char']]],
+                   ['di',2]], {}),
+            ['di', 2]
+        );
+    });
+    test('constructing a data type 2', function () {
+        assert.deepEqual(
+            evalS(['begin', ['data', 'datum', [['di', 'Int'], ['dc', 'Char']]],
+                   ['dc','\\c']], {}),
+            ['dc', '\\c']
+        );
+    });
+    test('constructing a data type 3', function () {
+        assert.deepEqual(
+            evalS(['begin', ['data', 'datum', [['di', 'Int', 'Bool', 'Char'], ['dc', 'Char']]],
+                   ['di', 1, '#t','\\c']], {}),
+            ['di', 1, '#t', '\\c']
         );
     });
 });
@@ -703,6 +754,12 @@ suite('Typecheck if:', function () {
             'Int'
         );
     });
+    test('(if (> 1 0) 1 0)', function () {
+       assert.deepEqual(
+           typecheck([['if', ['>', 1, 0], 1, 2]])[0],
+            'Int'
+        );
+    }); 
     test('(if #t #f #t)', function() {
         assert.deepEqual(
             typecheck([['if', '#t', '#f', '#t']])[0],
@@ -745,6 +802,108 @@ suite('Typecheck def + lambda:', function () {
             typecheck([['def', 'mk-addr', ['lambda', ['x'],
                                            ['lambda', ['y'], ['+', 'x', 'y']]]]])[0],
             '(Int -> (Int -> Int))'
+        );
+    });
+});
+
+suite('Typecheck data:\t', function() {
+    test('(data datum ((da Int))) :: datum', function() {
+        assert.deepEqual(
+            typecheck([['data', 'datum', [['da', 'Int']]]])[0],
+            'datum'
+        );
+    });
+    test('da :: Int -> datum', function() {
+        assert.deepEqual(
+            typecheck([['data', 'datum', [['da', 'Int']]],'da'])[1],
+            '(Int -> datum)'
+        );
+    });
+    test('(da 1) :: datum', function() {
+        assert.deepEqual(
+            typecheck([['data', 'datum', [['da', 'Int']]], ['da',1]])[1],
+            'datum'
+        );
+    });
+    test('a more complex data type', function() {
+        assert.deepEqual(
+            typecheck([['data', 'datum', [['da', 'Int', 'Bool'], ['dc', 'Char']]], 'da'])[1],
+            '(Int -> Bool -> datum)'
+        );
+    });
+    test('a more complex data type 2', function() {
+        assert.deepEqual(
+            typecheck([['data', 'datum', [['da', 'Int', 'Bool'], ['dc', 'Char']]], 'dc'])[1],
+            '(Char -> datum)'
+        );
+    });
+    test('a more complex data type constructed', function() {
+        assert.deepEqual(
+            typecheck([['data', 'datum', [['da', 'Int', 'Bool'], ['dc', 'Char']]], ['da', 1, '#t']])[1],
+            'datum'
+        );
+    });
+    test('incongruent types should throw an error', function() {
+        assert.throws(function () {
+            typecheck([['data', 'datum', [['da', 'Int', 'Bool'], ['dc', 'Char']]], ['da', 1, 2]])
+        });
+    });
+    test('incorrect # of args to a constructor should throw an error', function() {
+        assert.throws(function () {
+            typecheck([['data', 'datum', [['da', 'Int', 'Bool'], ['dc', 'Char']]], ['da', 1]])
+        });
+    });
+    test('incorrect # of args to a constructor should throw an error 2', function() {
+        assert.throws(function () {
+            typecheck([['data', 'datum', [['da', 'Int', 'Bool'], ['dc', 'Char']]], ['da', 1, '#t', 2]])
+        });
+    });
+});
+
+suite('(data int-tree ((node int-tree int-tree) (leaf Int))):', function() {
+    test('declaration :: int-tree', function() {
+        assert.deepEqual(
+            typecheck([['data', 'int-tree', [['node', 'int-tree', 'int-tree'], ['leaf', 'Int']]]])[0],
+            'int-tree'
+        );
+    });
+    test('node :: (int-tree -> int-tree -> int-tree)', function() {
+        assert.deepEqual(
+            typecheck([['data', 'int-tree', [['node', 'int-tree', 'int-tree'], ['leaf', 'Int']]], 'node'])[1],
+            '(int-tree -> int-tree -> int-tree)'
+        );
+    });
+    test('leaf :: (Int -> int-tree)', function() {
+        assert.deepEqual(
+            typecheck([['data', 'int-tree', [['node', 'int-tree', 'int-tree'], ['leaf', 'Int']]], 'leaf'])[1],
+            '(Int -> int-tree)'
+        );
+    });
+    test('(leaf 2) :: int-tree)', function() {
+        assert.deepEqual(
+            typecheck([['data', 'int-tree', [['node', 'int-tree', 'int-tree'], ['leaf', 'Int']]], ['leaf', 2]])[1],
+            'int-tree'
+        );
+    });
+    test('(node (leaf 2) (leaf 3)) :: int-tree)', function() {
+        assert.deepEqual(
+            typecheck([['data', 'int-tree', [['node', 'int-tree', 'int-tree'], ['leaf', 'Int']]], ['node', ['leaf', 2], ['leaf', 3]]])[1],
+            'int-tree'
+        );
+    });
+    test('(node (node (leaf 1) (leaf 2)) (leaf 3)) :: int-tree)', function() {
+        assert.deepEqual(
+            typecheck([['data', 'int-tree', [['node', 'int-tree', 'int-tree'], ['leaf', 'Int']]], ['node', ['node', ['leaf', 1], ['leaf', 2]], ['leaf', 3]]])[1],
+            'int-tree'
+        );
+    });
+});
+
+suite('Typecheck !:', function () {
+    test('! :: (Int -> a -> a)', function() {
+        assert.deepEqual(
+            typecheck(['!'])[0],
+            '(Int -> a -> a)'
         );
     });
 });

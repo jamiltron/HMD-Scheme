@@ -19,8 +19,8 @@ qexpr =
     { return ['quote', e]; }
 
 digit =
-    d:[1-9] ds:[0-9]*
-    { return parseInt(d + ds.join(""), 10); }
+    ds:[0-9]+
+    { return parseInt(ds.join(""), 10); }
 
 chr = 
     '\'' s:strchar '\''

@@ -128,6 +128,30 @@ var evalS = function (expr, env) {
     case '#<undefined>':
         throw new Error("undefined form");
         break;
+    case 'data':
+        if (lookup(env, expr[1]) !== null) {
+            throw new Error('already defined');
+        }
+        add_binding(env, expr[1], '#<undefined>');
+        for (var i = 0; i < expr[2].length; i++) {
+            var constructor = expr[2][i][0];
+            if (lookup(env, constructor) !== null) {
+                throw new Error('already defined');
+            }
+            add_binding(env, constructor, '#<undefined>');
+            var data_c = function (con_name) {
+                return function (args) {
+                    if (typeof args === 'object') {
+                        return [con_name].concat(args);                    
+                    }
+                    return con_name;
+                };
+                
+            };
+            update(env, constructor, data_c(constructor));
+        }
+        return 0;
+        break;
     case 'def':
         if (lookup(env, expr[1]) !== null) {
             throw new Error('already defined');
@@ -144,8 +168,8 @@ var evalS = function (expr, env) {
             throw new Error('already defined');
         } else if (expr.length === 4) { 
             add_binding(env, expr[1], '#<undefined>');
-            var l = function(args) {
-                bind = {};
+            var l = function (args) {
+                var bind = {};
                 for (var i = 0; i < args.length; i++) {
                     bind[expr[2][i]] = args[i];
                 }
@@ -178,12 +202,16 @@ var evalS = function (expr, env) {
         return [evalS(expr[1],env)].concat(evalS(expr[2], env));
         break;
     case '.':
-        return [".", evalS(expr[1], env), evalS(expr[2], env)];
+        var args = [];
+        for (var i = 1; i < expr.length; i++) {
+            args.push(evalS(expr[i], env));
+        }
+        return ['.'].concat(args);
     case 'car':
         return evalS(expr[1], env)[0];
         break;
     case 'cdr':
-        res = evalS(expr[1]);
+        res = evalS(expr[1], env);
         return res.slice(1, res.length);
         break;
     case '<':
@@ -274,6 +302,9 @@ var evalS = function (expr, env) {
             return evalS(expr[2], newenv);
         };
         break;
+    case '!':
+        var i = evalS(expr[1], env);
+        return evalS(expr[2], env)[i];
     // function application
     default:
         return lookup(env, expr[0])(expr.slice(1).map(function (x) { return evalS(x, env); }));

@@ -74,6 +74,30 @@ var analyse = function(expr, env, specific) {
     // empty list
     if (typeof expr === 'object' && expr.length === 0) {
         return List(new TypeVariable());
+    } else if (expr[0] === 'data') {
+        // define the data type as a type operator
+        defnt = new TypeOperator(expr[1], []);
+        env[expr[1]] = defnt;
+        // go through all of the type constructors
+        for (var i = 0; i < expr[2].length; i++) {
+            // create a function for each constructor
+            funt = new TypeVariable();
+            env[expr[2][i][0]] = funt;
+            specific[funt] = true;
+            args = []
+            for (var j = 1; j < expr[2][i].length; j++) {
+                args.push(get_type(expr[2][i][j], env, specific));
+            }
+            // make the constructors return type be the algebraic type
+            args.push(defnt);
+            result_type = new Fn(args);
+            unify(funt, result_type);
+
+            // make a convenience function for pattern-matching:
+            // function name is constructor? and takes the alg dt
+            // and returns whether or not it fi
+        }
+        return env[expr[1]];
         
     } else if (expr[0] === 'let') {
         new_env = clone(env);
@@ -247,6 +271,24 @@ var get_type = function (name, env, specific) {
         throw new Error("Parse error");
     }
 };
+
+var build_data = function (name, env, specific) {
+    if (typeof env[name] !== 'undefined') {
+        return fresh(env[name], specific);
+    } else if (name === "Int" || typeof name === 'number') {
+        return Int;
+    } else if (name === "Bool") {
+        return Bool;
+    } else if (name === "Char" || (typeof name === 'string' && name[0] == "\\")) {
+        return Ch;
+    } else if (name === "String") {
+        return Str;
+    } else {
+        return new TypeVariable();
+    }
+};
+
+
   
 // checks if pruned type t is v, if the pruned type is
 // an operator, see if v occurs within the constructing types
@@ -425,6 +467,7 @@ var pretty_print = function (result) {
 var typecheck = function(p) {
     var e1 = new TypeVariable();
     var e2 = new TypeVariable();
+    var e3 = new TypeVariable();
     var specific = {};
     var result = [];
     var top_env   = {'#t':   Bool, 
@@ -443,13 +486,14 @@ var typecheck = function(p) {
                      'car':  Fn([List(t1), t1]),
                      'cdr':  Fn([List(t1), List(t1)]),
                      'cons': Fn([t1, List(t1), List(t1)]),
-                     '.':    Fn([t1, t2, Pair(t1, t2)])};
+                     '!':    Fn([Int, e3, e3])};
     for (var i = 0; i < p.length; i++) {
         result.push(pretty_print(analyse(p[i], top_env, specific)));
         gName = [FIRST_LOW];
     }
     return result;
 };
+
 
 if (typeof module !== 'undefined') {
     module.exports.typecheck = typecheck;
