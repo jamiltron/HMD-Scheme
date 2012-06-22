@@ -858,6 +858,60 @@ suite('Typecheck data:\t', function() {
             typecheck([['data', 'datum', [['da', 'Int', 'Bool'], ['dc', 'Char']]], ['da', 1, '#t', 2]])
         });
     });
+    test('polymorphic data types', function() {
+        assert.deepEqual(
+            typecheck([['data', ['datum', 'a'], [['da', 'a']]]])[0],
+            'datum a'
+        );
+    });
+    test('polymorphic data types constructor', function() {
+        assert.deepEqual(
+            typecheck([['data', ['datum', 'a'], [['da', 'a']]], 'da'])[1],
+            '(a -> datum a)'
+        );
+    });
+    test('polymorphic data types constructed', function() {
+        assert.deepEqual(
+            typecheck([['data', ['datum', 'a'], [['da', 'a']]], ['da', 1]])[1],
+            'datum Int'
+        );
+    });
+    test('polymorphic data types 2', function() {
+        assert.deepEqual(
+            typecheck([['data', ['datum', 'a', 'b'], [['da', 'a'], ['db', 'b']]]])[0],
+            'datum a b'
+        );
+    });
+    test('polymorphic data types constructor 2b', function() {
+        assert.deepEqual(
+            typecheck([['data', ['datum', 'a', 'b'], [['da', 'a'], ['db', 'b']]], 'da'])[1],
+            '(a -> datum a b)'
+        );
+    });
+    test('polymorphic data types constructor 2b', function() {
+        assert.deepEqual(
+            typecheck([['data', ['datum', 'a', 'b'], [['da', 'a'], ['db', 'b']]], 'db'])[1],
+            '(b -> datum a b)'
+        );
+    });
+    test('polymorphic data types constructed 2a', function() {
+        assert.deepEqual(
+            typecheck([['data', ['datum', 'a', 'b'], [['da', 'a'], ['db', 'b']]], ['da', 1]])[1],
+            'datum Int b'
+        );
+    });
+    test('polymorphic data types constructed 2b', function() {
+        assert.deepEqual(
+            typecheck([['data', ['datum', 'a', 'b'], [['da', 'a'], ['db', 'b']]], ['db', '#t']])[1],
+            'datum a Bool'
+        );
+    });
+    test('polymorphic data types constructed 3', function() {
+        assert.deepEqual(
+            typecheck([['data', ['datum', 'a', 'b'], [['da', 'a'], ['db', 'b'], ['dc', 'a', 'b']]], ['dc', '#t', '\\c']])[1],
+            'datum Bool Char'
+        );
+    });
 });
 
 suite('(data int-tree ((node int-tree int-tree) (leaf Int))):', function() {

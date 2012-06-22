@@ -63,11 +63,25 @@ var clone = function(o) {
     }
 };
 
+var copy = function (src, dst) {
+    var attr;
+    if (null === src || "object" != typeof src) {
+        return dst;
+    } else {
+        for (attr in src) {
+            if (src.hasOwnProperty(attr)) dst[attr] = src[attr];
+        }
+        return dst;
+    }
+};
+        
+
 // given an expression, a type environment, and a list of specifically-named
 // types, generate the type of the supplied expression
 var analyse = function(expr, env, specific) {
     var t1, t2, i;
     var args = [];
+    var type_args = [];
     var defnt, funt, argt, new_specific, new_env, next_node, result_type, ret_type;
     specific = typeof specific !== 'undefined' ? specific : {};
 
@@ -75,29 +89,51 @@ var analyse = function(expr, env, specific) {
     if (typeof expr === 'object' && expr.length === 0) {
         return List(new TypeVariable());
     } else if (expr[0] === 'data') {
-        // define the data type as a type operator
-        defnt = new TypeOperator(expr[1], []);
-        env[expr[1]] = defnt;
+        var datum;
+        type_args = [];
+        new_env = clone(env);
+        new_specific = clone(specific);
+        /* define the data type as a type operator,
+           if it is the form of data datum, we just declare the
+           defining type as a type operator, however if the data type
+           if polymorphic (i.e. (data (datum a b c) ...), we need to 
+           declare type variables for each parameter */
+        if (typeof expr[1] === 'string') {
+            defnt = new TypeOperator(expr[1], []);
+            datum = expr[1];
+            env[datum] = defnt;
+        } else {
+            for (var i = 1; i < expr[1].length; i++) {
+                argt = new TypeVariable();
+                new_env[expr[1][i]] = argt;
+                new_specific[argt] = true;
+                type_args.push(argt);
+            }            
+            defnt = new TypeOperator(expr[1][0], type_args);
+            datum = env[expr[1][0]];
+            env[datum] = defnt;
+        }
+
         // go through all of the type constructors
         for (var i = 0; i < expr[2].length; i++) {
             // create a function for each constructor
             funt = new TypeVariable();
             env[expr[2][i][0]] = funt;
             specific[funt] = true;
+            
+            new_env = copy(env, new_env);
+            new_specific = copy(specific, new_specific);
+            
             args = []
             for (var j = 1; j < expr[2][i].length; j++) {
-                args.push(get_type(expr[2][i][j], env, specific));
+                args.push(get_type(expr[2][i][j], new_env, new_specific));
             }
             // make the constructors return type be the algebraic type
             args.push(defnt);
             result_type = new Fn(args);
             unify(funt, result_type);
-
-            // make a convenience function for pattern-matching:
-            // function name is constructor? and takes the alg dt
-            // and returns whether or not it fi
         }
-        return env[expr[1]];
+        return defnt;
         
     } else if (expr[0] === 'let') {
         new_env = clone(env);
@@ -268,6 +304,7 @@ var get_type = function (name, env, specific) {
     } else if (name === "String") {
         return Str;
     } else {
+        console.log(name);
         throw new Error("Parse error");
     }
 };
@@ -287,8 +324,6 @@ var build_data = function (name, env, specific) {
         return new TypeVariable();
     }
 };
-
-
   
 // checks if pruned type t is v, if the pruned type is
 // an operator, see if v occurs within the constructing types
@@ -456,7 +491,12 @@ var pretty_print = function (result) {
             return "(" + pretty_print(result.types[0]) + " . " + 
                 pretty_print(result.types[1]) + ")";
         } else {
-            return result.name;
+            from_str = result.name;
+            for (var i = 0; i < result.types.length; i++) {
+                from_str += " " + pretty_print(result.types[i]);
+            }
+            return from_str;
+            
         }
     } else {
         throw new Error("Pretty printing error");
